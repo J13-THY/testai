@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI-CRIS · Kyambogo University</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+ <link rel="stylesheet" href="/static/aicris_style.css">
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="kyu-crest">🎓</div>
+    <div class="sidebar-title">KYU AI-CRIS</div>
+    <div class="sidebar-sub">Kyu AI</div>
+  </div>
+
+  <div class="sidebar-body">
+    <div class="section-label">Quick Searches</div>
+
+    <button class="quick-btn" onclick="sendQuick('What undergraduate programmes does Kyambogo University offer?')">
+      <span class="icon">📚</span> Browse Programmes
+    </button>
+    <button class="quick-btn" onclick="sendQuick('What are the O-Level entry requirements for engineering courses?')">
+      <span class="icon">📋</span> Entry Requirements
+    </button>
+    <button class="quick-btn" onclick="sendQuick('How much are the tuition fees for diploma programmes?')">
+      <span class="icon">💰</span> Fees & Costs
+    </button>
+    <button class="quick-btn" onclick="sendQuick('What career pathways are available for Computer Science graduates?')">
+      <span class="icon">🚀</span> Career Pathways
+    </button>
+    <button class="quick-btn" onclick="sendQuick('What is the difference between a Diploma and a Degree programme?')">
+      <span class="icon">⚖️</span> Diploma vs Degree
+    </button>
+    <button class="quick-btn" onclick="sendQuick('When does the application window open and what documents do I need?')">
+      <span class="icon">📅</span> Application Process
+    </button>
+
+    <div class="section-label" style="margin-top:24px;">About</div>
+    <button class="quick-btn" onclick="sendQuick('What is AI-CRIS and how can it help me?')">
+      <span class="icon">ℹ️</span> About KYU AI-CRIS
+    </button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="badge">
+      <div class="badge-dot"></div>
+      AI Engine Online
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title">Course Recommendation Assistant</div>
+      <div class="topbar-hint">Ask me anything about programmes, entry requirements or admissions</div>
+    </div>
+    <button class="clear-btn" onclick="clearChat()">↺ New Chat</button>
+  </div>
+
+  <div class="messages" id="messages">
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">✨</div>
+      <h2>Welcome to KYU AI-CRIS</h2>
+      <p>Your intelligent guide to courses and admissions at Kyambogo University. Ask me about programmes, entry requirements, fees or career pathways.</p>
+      <div class="welcome-chips">
+        <div class="chip" onclick="sendQuick('Help me find a course based on my O-Level results')">📝 Course matching</div>
+        <div class="chip" onclick="sendQuick('What A-Level combinations qualify for Bachelor of Engineering?')">🔬 A-Level guidance</div>
+        <div class="chip" onclick="sendQuick('Tell me about postgraduate programmes available')">🎓 Postgraduate</div>
+        <div class="chip" onclick="sendQuick('Which courses lead to careers in technology?')">💻 Tech careers</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-box">
+      <textarea
+        id="userInput"
+        rows="1"
+        placeholder="Ask about courses, fees, entry requirements…"
+        onkeydown="handleKey(event)"
+        oninput="autoResize(this)"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+    </div>
+    <div class="input-hint">Press Enter to send · Shift+Enter for new line</div>
+  </div>
+</div>
+
+<script>
+  let conversationHistory = [];
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function hideWelcome() {
+    const w = document.getElementById('welcome');
+    if (w) w.remove();
+  }
+
+  function appendMsg(role, text) {
+    hideWelcome();
+    const container = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+
+    const avatar = document.createElement('div');
+    avatar.className = `avatar ${role}`;
+    avatar.textContent = role === 'ai' ? '🎓' : '👤';
+
+    const bubble = document.createElement('div');
+    bubble.className = `bubble ${role}`;
+    bubble.innerHTML = text.replace(/\n/g, '<br>');
+
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return bubble;
+  }
+
+  function showTyping() {
+    hideWelcome();
+    const container = document.getElementById('messages');
+    const div = document.createElement('div');
+    div.className = 'msg ai';
+    div.id = 'typing-indicator';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar ai';
+    avatar.textContent = '🎓';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble ai';
+    bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+
+    div.appendChild(avatar);
+    div.appendChild(bubble);
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing-indicator');
+    if (t) t.remove();
+  }
+
+  async function sendMessage() {
+    const input = document.getElementById('userInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    input.style.height = 'auto';
+    document.getElementById('sendBtn').disabled = true;
+
+    appendMsg('user', text);
+    conversationHistory.push({ role: 'user', content: text });
+
+    showTyping();
+
+    try {
+      const res = await fetch('/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversationHistory })
+      });
+      const data = await res.json();
+      removeTyping();
+
+      if (data.error) {
+        appendMsg('ai', '⚠️ Sorry, something went wrong. Please try again.');
+      } else {
+        appendMsg('ai', data.reply);
+        conversationHistory.push({ role: 'assistant', content: data.reply });
+      }
+    } catch (e) {
+      removeTyping();
+      appendMsg('ai', '⚠️ Connection error. Please check your connection and try again.');
+    }
+
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+
+  function sendQuick(text) {
+    document.getElementById('userInput').value = text;
+    sendMessage();
+  }
+
+  function clearChat() {
+    conversationHistory = [];
+    const msgs = document.getElementById('messages');
+    msgs.innerHTML = `
+      <div class="welcome" id="welcome">
+        <div class="welcome-icon">✨</div>
+        <h2>Welcome to AI-CRIS</h2>
+        <p>Your intelligent guide to courses and admissions at Kyambogo University. Ask me about programmes, entry requirements, fees, or career pathways.</p>
+        <div class="welcome-chips">
+          <div class="chip" onclick="sendQuick('Help me find a course based on my O-Level results')">📝 Course matching</div>
+          <div class="chip" onclick="sendQuick('What A-Level combinations qualify for Bachelor of Engineering?')">🔬 A-Level guidance</div>
+          <div class="chip" onclick="sendQuick('Tell me about postgraduate programmes available')">🎓 Postgraduate</div>
+          <div class="chip" onclick="sendQuick('Which courses lead to careers in technology?')">💻 Tech careers</div>
+        </div>
+      </div>`;
+  }
+</script>
+</body>
+</html>
